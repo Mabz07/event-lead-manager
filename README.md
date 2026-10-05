@@ -2,8 +2,8 @@
 
 A full-stack, AI-native B2B lead management tool built to capture, organize, and follow up with business prospects met at conferences and networking events.
 
-- **Live Application:** [https://your-app.vercel.app](https://your-app.vercel.app)
-- **API Documentation:** [https://your-api.onrender.com/docs](https://your-api.onrender.com/docs)
+- **Live Application:** [https://event-lead-manager-eta.vercel.app](https://event-lead-manager-eta.vercel.app)
+- **API Documentation:** [https://event-lead-manager.onrender.com/docs](https://event-lead-manager.onrender.com/docs)
 
 ---
 
@@ -24,7 +24,7 @@ A full-stack, AI-native B2B lead management tool built to capture, organize, and
 ### 1. AI Reliability & Fallback Architecture
 To prevent API failures during Google server demand spikes (such as `503 UNAVAILABLE`), the backend integrates an automated multi-model fallback queue:
 - Primary: `gemini-2.0-flash`
-- Fallback: `gemini-1.5-flash`, `gemini-3.8-flash`
+- Fallback: `gemini-1.5-flash`
 If a model experiences temporary throttling, requests are seamlessly rerouted within milliseconds without user disruption.
 
 ### 2. Strict Grounding Prompts (Anti-Hallucination)
@@ -64,6 +64,6 @@ Table: `event_leads`
 ```bash
 cd backend
 python -m venv venv
-.\venv\Scripts\Activate.ps1   # On Windows
+.\venv\Scripts\Activate.ps1    # On Windows
 pip install -r requirements.txt
 uvicorn app.main:app --reload
