@@ -4,7 +4,6 @@ A full-stack, AI-native B2B lead management tool built to capture, organize, and
 
 - **Live Application:** [https://your-app.vercel.app](https://your-app.vercel.app)
 - **API Documentation:** [https://your-api.onrender.com/docs](https://your-api.onrender.com/docs)
-- **Walkthrough Video:** [Loom Link Here]
 
 ---
 
