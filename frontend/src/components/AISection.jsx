@@ -33,7 +33,7 @@ export default function AISection({ lead }) {
         event: lead.event,
         notes: lead.notes,
       });
-      setFollowUp(res.follow_up_message);
+      setFollowUp(res.follow_up);
     } catch (err) {
       setError(err.message || 'Failed to generate follow-up.');
     } finally {
