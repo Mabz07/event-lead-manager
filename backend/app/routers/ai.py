@@ -1,7 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app import crud
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 from app.services.ai import summarize_notes, generate_follow_up
 
 router = APIRouter(
@@ -9,26 +7,38 @@ router = APIRouter(
     tags=["AI Assistance"]
 )
 
-@router.post("/summarize/{lead_id}")
-def api_summarize_notes(lead_id: int, db: Session = Depends(get_db)):
-    lead = crud.get_lead_by_id(db, lead_id=lead_id)
-    if not lead:
-        raise HTTPException(status_code=404, detail="Lead not found")
-    
-    summary = summarize_notes(lead.notes)
-    return {"summary": summary}
+class SummarizeRequest(BaseModel):
+    notes: str
 
+class FollowUpRequest(BaseModel):
+    name: str
+    company: str
+    event: str
+    notes: str
 
-@router.post("/follow-up/{lead_id}")
-def api_generate_follow_up(lead_id: int, db: Session = Depends(get_db)):
-    lead = crud.get_lead_by_id(db, lead_id=lead_id)
-    if not lead:
-        raise HTTPException(status_code=404, detail="Lead not found")
-        
-    email_draft = generate_follow_up(
-        name=lead.name,
-        company=lead.company,
-        event=lead.event,
-        notes=lead.notes
-    )
-    return {"follow_up": email_draft}
+@router.post("/summarize")
+def api_summarize_notes(payload: SummarizeRequest):
+    try:
+        summary = summarize_notes(payload.notes)
+        return {"summary": summary}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@router.post("/follow-up")
+def api_generate_follow_up(payload: FollowUpRequest):
+    try:
+        email_draft = generate_follow_up(
+            name=payload.name,
+            company=payload.company,
+            event=payload.event,
+            notes=payload.notes
+        )
+        return {"follow_up": email_draft}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
