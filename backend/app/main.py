@@ -16,12 +16,11 @@ app = FastAPI(
 # Open CORS to allow Vercel and local development seamlessly
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://event-lead-manager-eta.vercel.app"],  # Or ["*"] to allow all domains
+    allow_origins=["*"],  # Allows all origins, including your Vercel deployment
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Allows all headers
 )
-
 # Register routers
 app.include_router(leads.router)
 app.include_router(ai.router)
