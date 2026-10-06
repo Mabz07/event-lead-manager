@@ -16,8 +16,8 @@ app = FastAPI(
 # Open CORS to allow Vercel and local development seamlessly
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=["https://event-lead-manager-eta.vercel.app"],  # Or ["*"] to allow all domains
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
