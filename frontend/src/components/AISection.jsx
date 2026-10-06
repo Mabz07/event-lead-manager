@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, FileText, Send } from 'lucide-react';
+import { Sparkles, Copy, Check, FileText, Send, Mail } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function AISection({ lead }) {
@@ -46,6 +46,16 @@ export default function AISection({ lead }) {
     navigator.clipboard.writeText(followUp);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenInGmail = () => {
+    if (!followUp) return;
+    const subject = encodeURIComponent(`Following up from our meeting at ${lead.event || 'the event'}`);
+    const body = encodeURIComponent(followUp);
+    const recipient = encodeURIComponent(lead.email || '');
+    
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipient}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
   };
 
   return (
@@ -134,14 +144,25 @@ export default function AISection({ lead }) {
             <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Suggested Follow-up Message
             </h4>
-            <button 
-              onClick={handleCopy} 
-              className="btn-secondary" 
-              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-            >
-              {copied ? <Check size={13} color="var(--primary)" /> : <Copy size={13} />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={handleCopy} 
+                className="btn-secondary" 
+                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+              >
+                {copied ? <Check size={13} color="var(--primary)" /> : <Copy size={13} />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              <button 
+                onClick={handleOpenInGmail} 
+                className="btn-secondary" 
+                style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Mail size={13} />
+                <span>Open in Gmail</span>
+              </button>
+            </div>
           </div>
           <div style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
             {followUp}
