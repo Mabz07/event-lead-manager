@@ -35,9 +35,9 @@ def get_client() -> OpenAI:
     return client
 
 FALLBACK_MODELS = [
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "google/gemma-2-9b-it:free",
-    "mistralai/mistral-7b-instruct:free"
+    "openrouter/free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3.5-lightning:free"
 ]
 
 def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) -> str:
