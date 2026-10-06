@@ -39,6 +39,7 @@ FALLBACK_MODELS = [
     "google/gemma-4-26b-a4b-it:free",
     "nvidia/nemotron-3.5-lightning:free"
 ]
+import re
 
 def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) -> str:
     ai_client = get_client()
@@ -47,14 +48,26 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
             response = ai_client.chat.completions.create(
                 model=model_name,
                 messages=[
-                    {"role": "system", "content": "You are a professional B2B sales assistant."},
+                    {"role": "system", "content": "You are a professional B2B sales assistant. Provide ONLY the final requested output directly without any chain-of-thought, reasoning steps, or preamble text."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=temperature,
                 max_tokens=max_tokens
             )
             if response and response.choices and response.choices[0].message.content:
-                return response.choices[0].message.content.strip()
+                text = response.choices[0].message.content.strip()
+                
+                # Strip out common reasoning blocks or thinking tags if the model outputs them
+                text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+                
+                # If there's a preamble like "Here's a thinking process:", try to look for standard markers or clean it
+                if "Suggested Follow-up Message" in text or "Subject:" in text:
+                    # Keep from Subject onwards if present
+                    sub_idx = text.find("Subject:")
+                    if sub_idx != -1:
+                        text = text[sub_idx:]
+                
+                return text
         except Exception as e:
             err_str = str(e)
             if any(code in err_str for code in ["429", "503", "rate_limit", "overloaded", "404"]):
@@ -64,7 +77,7 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
                 detail=f"OpenRouter API error: {err_str}"
             )
     raise HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        status_code=status.HTTP_53_SERVICE_UNAVAILABLE,
         detail="OpenRouter free models are temporarily busy. Please retry in a few seconds."
     )
 
