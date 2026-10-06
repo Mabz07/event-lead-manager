@@ -41,6 +41,8 @@ FALLBACK_MODELS = [
 ]
 import re
 
+import re
+
 def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) -> str:
     ai_client = get_client()
     for model_name in FALLBACK_MODELS:
@@ -48,7 +50,7 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
             response = ai_client.chat.completions.create(
                 model=model_name,
                 messages=[
-                    {"role": "system", "content": "You are a professional B2B sales assistant. Provide ONLY the final requested output directly without any chain-of-thought, reasoning steps, or preamble text."},
+                    {"role": "system", "content": "You are a professional B2B sales assistant. Output ONLY the final requested result. Never include reasoning steps, thinking blocks, or preambles."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=temperature,
@@ -57,16 +59,25 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
             if response and response.choices and response.choices[0].message.content:
                 text = response.choices[0].message.content.strip()
                 
-                # Strip out common reasoning blocks or thinking tags if the model outputs them
+                # 1. Remove standard <think> tags if present
                 text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
                 
-                # If there's a preamble like "Here's a thinking process:", try to look for standard markers or clean it
-                if "Suggested Follow-up Message" in text or "Subject:" in text:
-                    # Keep from Subject onwards if present
-                    sub_idx = text.find("Subject:")
-                    if sub_idx != -1:
-                        text = text[sub_idx:]
-                
+                # 2. If the model output contains conversational thinking preambles, 
+                # strip everything up to the actual email or summary indicators.
+                lower_text = text.lower()
+                if "thinking process" in lower_text or "analyze user request" in lower_text:
+                    # Look for professional email markers first
+                    for marker in ["subject:", "dear ", "hi ", "hello "]:
+                        idx = lower_text.rfind(marker)
+                        if idx != -1:
+                            text = text[idx:]
+                            break
+                    else:
+                        # If it's a summary, look for the last occurrence of bullet points or summary headers
+                        lines = text.split('\n')
+                        clean_lines = [l for l in lines if not any(w in l.lower() for w in ["thinking", "analyze", "constraint", "task:", "role:"])]
+                        text = '\n'.join(clean_lines).strip()
+
                 return text
         except Exception as e:
             err_str = str(e)
@@ -77,7 +88,7 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
                 detail=f"OpenRouter API error: {err_str}"
             )
     raise HTTPException(
-        status_code=status.HTTP_53_SERVICE_UNAVAILABLE,
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail="OpenRouter free models are temporarily busy. Please retry in a few seconds."
     )
 
