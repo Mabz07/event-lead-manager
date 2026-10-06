@@ -4,7 +4,6 @@ from openai import OpenAI
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 
-# Ensure .env is loaded from backend/
 BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_PATH = BASE_DIR / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
@@ -18,7 +17,6 @@ if OPENROUTER_API_KEY and OPENROUTER_API_KEY != "your_openrouter_api_key_here":
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
     )
-
 
 def get_client() -> OpenAI:
     global client
@@ -36,19 +34,14 @@ def get_client() -> OpenAI:
         )
     return client
 
-
-# Free model pool on OpenRouter with automatic fallback
 FALLBACK_MODELS = [
     "meta-llama/llama-3.1-8b-instruct:free",
     "google/gemma-2-9b-it:free",
     "mistralai/mistral-7b-instruct:free"
 ]
 
-
 def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) -> str:
     ai_client = get_client()
-    last_error = None
-
     for model_name in FALLBACK_MODELS:
         try:
             response = ai_client.chat.completions.create(
@@ -64,30 +57,21 @@ def _generate_with_fallback(prompt: str, max_tokens: int, temperature: float) ->
                 return response.choices[0].message.content.strip()
         except Exception as e:
             err_str = str(e)
-            last_error = e
             if any(code in err_str for code in ["429", "503", "rate_limit", "overloaded", "404"]):
                 continue
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"OpenRouter API error: {err_str}"
             )
-
     raise HTTPException(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail="OpenRouter free models are temporarily busy. Please retry in a few seconds."
     )
 
-
 def summarize_notes(notes: str) -> str:
-    """Summarize interaction notes strictly based on provided text."""
     if not notes or not notes.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Interaction notes cannot be empty."
-        )
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Interaction notes cannot be empty.")
     prompt = f"""Given the interaction notes below from a business event, produce a concise professional summary (3 to 4 bullet points maximum).
-
 CONSTRAINTS:
 - Rely strictly on the information provided in the notes.
 - Do NOT fabricate, assume, or invent details not present in the notes.
@@ -98,17 +82,10 @@ Interaction Notes:
 """
     return _generate_with_fallback(prompt, max_tokens=300, temperature=0.2)
 
-
 def generate_follow_up(name: str, company: str, event: str, notes: str) -> str:
-    """Draft a polite, professional business follow-up message based strictly on contact & notes."""
     if not notes or not notes.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot generate follow-up email without interaction notes."
-        )
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot generate follow-up email without interaction notes.")
     prompt = f"""Draft a professional business follow-up email after meeting a prospect at an event.
-
 Contact Information:
 - Recipient Name: {name}
 - Company: {company}
